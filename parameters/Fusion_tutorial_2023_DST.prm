@@ -1,0 +1,38 @@
+parameters
+    integrator
+        FOD_set       'working_FOD' % possible classification ids
+        fusion_method 'HDNROC'      % fusion method possibilities ('HLNROC','HDNROC')
+        ipig_method   'consonant'   % PT^-1 method possiblities ('consonant','bayesian')
+        flg
+            probability_wgts false % flag to toggle weights (true probability, false counts/total)
+            DP               false % flag to use merge instead of split conflict
+        end
+        thresholds
+            min_N_data_pts   200   % min number of data points to do something
+            delta_class_call 0.025 % min delta between max and next max prob for a call
+            class_call       0.30  % min max_prob for a call
+        end
+    end
+    class_set     [1:3]       % possible classification ids
+    fusion_method 'HDNROC'    % fusion method possibilities ('HLNROC','HDNROC')
+    ipig_method   'consonant' % PT^-1 method possiblities ('consonant','bayesian')
+    flg
+        probability_wgts false % flag to toggle weights (true probability, false counts/total)
+        DP               false % flag to use merge instead of split conflict
+    end
+    thresholds
+        min_N_data_pts   200   % min number of data points to do something
+        delta_class_call 0.025 % min delta between max and next max prob for a call
+        class_call       0.30  % min max_prob for a call
+    end
+    sources
+        source1
+            FOD_set 'working_FOD'
+            confusion_matrix [0.5 0.0 0.5; 0.25 0.75 0.0; 0.25 0.25 0.5] % truth rows, calls columns
+            trust_level [0.0 0.0 0.0 0.0] % level of trus in source beyond its confusion matrix
+            odds_report 0.70                % chances source will report on tracks at all
+            trk_amb     0.98                % level of track ambiguity
+            conf        0.99                % highest prob in any call
+        end
+    end
+end

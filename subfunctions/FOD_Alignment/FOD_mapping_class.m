@@ -1,0 +1,140 @@
+classdef FOD_mapping_class < handle
+    properties
+        parameters = [];
+    end
+    methods
+        function self = initialize(self,varargin)
+            % read in variables
+            optin = {'FOD_set.prm'};
+            if nargin <= length(optin)+1
+                optin(1:nargin-1) = varargin(:);
+                [parameter_file] = optin{:};
+            else
+                return;
+            end
+            
+            % read parameters
+            if ~isfield(self.parameters,'file') ...
+                    || ~strcmp(parameter_file,self.parameters.file)
+                
+                % get parameters
+                parameter_file_content  = read_parameters(parameter_file);
+                self.parameters = parameter_file_content.parameters;
+                self.parameters.file = parameter_file;
+            end
+        end
+
+        function information_out = mapFOD(self,varargin)
+            % read in variables
+            optin = {[],[],[]};
+            if nargin <= length(optin)+1
+                optin(1:nargin-1) = varargin(:);
+                [information_in,FOD_in,FOD_out] = optin{:};
+            else
+                return;
+            end
+
+            if isequal(FOD_in,FOD_out)
+                information_out = information_in;
+                return;
+            end
+            switch class(information_in)
+                case {'double','logical'} % assume it's a sinlge class type
+
+                    % build mapping matrix
+                    matrix_in2out = self.buildMappingMatrix(FOD_in,FOD_out);
+
+                    % danandmaddierey
+                    information_out = find(matrix_in2out(:,information_in));
+
+                case 'info_class'
+                    if ~isempty(information_in.BBA)
+                    elseif ~isempty(information_in.probability)
+                        information_in.BBA = information_in.probability.ipig('consonant');
+                    elseif ~isempty(information_in.possibility)
+                        information_in.BBA = information_in.possibility.iCF();
+                    else
+                        error('MATLAB:input','No information to map');
+                    end
+                    information_out = info_class;
+                    information_out.BBA = self.mapFOD(information_in.BBA,FOD_in,FOD_out);
+                    information_out.probability = information_out.BBA.pig();
+                    information_out.possibility = information_out.BBA.CF();
+                case 'BBA_class' % actual mapping occurs here
+                    if isempty(information_in)
+                        error('MATLAB:input','No information to map');
+                    end          
+
+                    % build mapping matrix
+                    matrix_in2out = self.buildMappingMatrix(FOD_in,FOD_out);
+
+                    % convert BBA in to BBA out
+                    BBA_out = information_in.copy();
+                    for ib = 1 : length(information_in)
+                        this_focal_in           = information_in(ib).focal;
+                        this_focal_out          = logical(matrix_in2out*this_focal_in);
+                        BBA_out(ib).focal       = this_focal_out;
+                        BBA_out(ib).cardonality = sum(BBA_out(ib).focal);
+                    end
+
+                    % consolidate BBA
+                    information_out = BBA_out.consolidate();
+
+                case 'probability_class'
+                    BBA_in = information_in.ipig('consonant');
+                    BBA_out = self.mapFOD(BBA_in,FOD_in,FOD_out);
+                    information_out = BBA_out.pig();
+                case 'possibility_class'
+                    BBA_in = information_in.iCF();
+                    BBA_out = self.mapFOD(BBA_in,FOD_in,FOD_out);
+                    information_out = BBA_out.CF();
+                case 'confusion_matrix_class'
+                otherwise
+                    error('MATLAB:input','Unknown information class');
+            end
+        end
+
+        function matrix_in2out = buildMappingMatrix(self,FOD_in,FOD_out)
+            % initialize FODs
+            universal_FOD        = fields(self.parameters.universal_FOD);
+            FODmap_universal2in  = struct2table(self.parameters.(FOD_in));
+            FODmap_universal2out = struct2table(self.parameters.(FOD_out));
+            nUniClasses          = length(universal_FOD);
+            in_FOD               = repmat({''},nUniClasses,1);
+            out_FOD              = repmat({''},nUniClasses,1);
+            idx_in_not_unique    = true(nUniClasses,1);
+            idx_out_not_unique   = true(nUniClasses,1);
+            for ifld = 1 : nUniClasses
+                if ~any(contains(in_FOD,FODmap_universal2in{1,ifld}))
+                    in_FOD{ifld,1}          = FODmap_universal2in{1,ifld};
+                    idx_in_not_unique(ifld) = false;
+                end
+                if ~any(contains(out_FOD,FODmap_universal2out{1,ifld}))
+                    out_FOD{ifld,1}          = FODmap_universal2out{1,ifld};
+                    idx_out_not_unique(ifld) = false;
+                end
+            end
+            in_FOD(idx_in_not_unique) = [];
+            out_FOD(idx_out_not_unique) = [];
+            nInClasses           = length(in_FOD);
+            nOutClasses           = length(out_FOD);
+
+            % initialize mapping matrices
+            matrix_in2universal  = false(nUniClasses,nInClasses);
+            matrix_out2universal = false(nUniClasses,nOutClasses);
+
+            % populate matrices
+            for ifld = 1 : nUniClasses
+                idx_col_in                             = ...
+                    contains(in_FOD,FODmap_universal2in{1,ifld});
+                matrix_in2universal(ifld,idx_col_in)   = true;
+                idx_col_out                            = ...
+                    contains(out_FOD,FODmap_universal2out{1,ifld});
+                matrix_out2universal(ifld,idx_col_out) = true;
+            end
+
+            % get matrix in2out
+            matrix_in2out = logical(matrix_in2universal' * matrix_out2universal)';
+        end
+    end
+end
