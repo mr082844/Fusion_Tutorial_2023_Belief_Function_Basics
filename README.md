@@ -9,4 +9,4 @@ Run instructions:
 3. Open ./tests/Fusion_tutorial_2023.mlx
 4. Run Fusion_tutorial_2023.mlx
 
-Note: Ran in MATLAB 2021b and later.  Also, toolbox dependencies include communication_toolbox, Statistics and Machine Learning Toolbox, signal_toolbox.
+Note: Ran in MATLAB 2021a and later.  Also, toolbox dependencies include communication_toolbox, Statistics and Machine Learning Toolbox, signal_toolbox.
