@@ -383,7 +383,7 @@ classdef DST_class < handle
                 % determine root conflicts
                 root_conflict = NaN(1,N_sources);
                 for is = 1 : N_sources
-                    root_conflict(is) = bi2de(reshape(agg_source_focal{ie}{is}...
+                    root_conflict(is) = bi2dec(reshape(agg_source_focal{ie}{is}...
                         ,1,numel(agg_source_focal{ie}{is})));
                 end
                 root_conflict = unique(root_conflict);
@@ -441,7 +441,7 @@ classdef DST_class < handle
                 %                 root_conflict2 = sort(New_root_conflict2(~isnan(New_root_conflict2)));
                 %                 N_roots = length(root_conflict2);
 
-                bi_root_conflicts = de2bi([root_conflict 2^(self.parameters.integrator.N_classes-1)]);
+                bi_root_conflicts = dec2bi([root_conflict 2^(self.parameters.integrator.N_classes-1)]);
                 bi_root_conflicts(end,:) = [];
                 if self.parameters.integrator.flg.DP
                     bi_root_conflicts = any(bi_root_conflicts,1);
